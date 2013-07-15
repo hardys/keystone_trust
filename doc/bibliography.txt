@@ -1,0 +1,26 @@
+
+
+http://adam.younglogic.com/2013/03/trusts-and-oauth/
+https://wiki.openstack.org/wiki/Keystone/Trusts
+
+
+Discussions
+-----------
+https://etherpad.openstack.org/havana-saml-oauth-scim
+https://etherpad.openstack.org/heat-credentials-management
+
+Blueprints & Implementations
+----------------------------
+https://blueprints.launchpad.net/heat/+spec/heat-trusts
+https://blueprints.launchpad.net/keystone/+spec/delegated-auth-via-oauth
+https://review.openstack.org/#/c/20289/
+
+APIs 
+----
+https://github.com/openstack/identity-api/blob/master/openstack-identity-api/v3/src/markdown/identity-api-v3-os-trust-ext.md
+https://github.com/openstack/identity-api/blob/master/openstack-identity-api/v3/src/markdown/identity-api-v3.md
+
+Bugs
+----
+(As of 07/15/2013)
+https://bugs.launchpad.net/keystone/+bug/1182448
