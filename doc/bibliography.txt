@@ -9,10 +9,15 @@ Discussions
 https://etherpad.openstack.org/havana-saml-oauth-scim
 https://etherpad.openstack.org/heat-credentials-management
 
-Blueprints & Implementations
-----------------------------
+Blueprints & Specs
+------------------
 https://blueprints.launchpad.net/heat/+spec/heat-trusts
 https://blueprints.launchpad.net/keystone/+spec/delegated-auth-via-oauth
+https://gist.github.com/termie/5225817
+https://gist.github.com/admiyo/5247912
+
+Implementations
+---------------
 https://review.openstack.org/#/c/20289/
 
 APIs 
