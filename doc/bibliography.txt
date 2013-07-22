@@ -18,7 +18,8 @@ https://gist.github.com/admiyo/5247912
 
 Implementations
 ---------------
-https://review.openstack.org/#/c/20289/
+https://review.openstack.org/#/c/20289/ (Trusts, accepted)
+https://review.openstack.org/#/c/29130/ (oAuth, pending as of 07/16/2013)
 
 APIs 
 ----
