@@ -42,6 +42,7 @@ USER1=$(keystone user-get User1 |awk '{if ($2 == "id") {print $4}}')
 USER2=$(keystone user-get User2 |awk '{if ($2 == "id") {print $4}}')
 
 echo "** Allow User1 to do stuff on swift"
+echo "keystone user-role-add --user-id USER1 --role-id MEMBER --tenant-id TENANT1"
 keystone user-role-add --user-id $USER1 --role-id $MEMBER_ID --tenant-id $TENANT1
 # Add the extra role to single out accesses from the delegate and the real deal
 keystone user-role-add --user-id $USER1 --role-id $ROLE_ID --tenant-id $TENANT1
@@ -57,24 +58,37 @@ echo "** Get V3 tokens"
 # see: https://bugs.launchpad.net/keystone/+bug/1182448
 TOKEN1=$(curl -i -d '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$USER1'", "password": "User1" } } } } }' -H "Content-type: application/json" http://$URL:5000/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}' | col -b)
 TOKEN2=$(curl -i -d '{ "auth": { "identity": { "methods": [ "password" ], "password": { "user": { "id": "'$USER2'", "password": "User2" } } } } }' -H "Content-type: application/json" http://$URL:5000/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}' | col -b)
-echo $TOKEN2
+#echo $TOKEN2
 
 echo "** Create trust: Trustor User1, Trustee User2, role delegation: Member"
+echo "curl -H 'X-Auth-Token: USER1_TOKEN' -d 
+'{ \"trust\":
+    { \"expires_at\": \"2024-02-27T18:30:59.999999Z\",
+      \"impersonation\": false,
+      \"project_id\": \"TENANT1\",
+      \"roles\": [ { \"name\": \"Member\" } ],
+      \"trustee_user_id\": \"USER2\",
+      \"trustor_user_id\": \"USER1\" }
+}' -H 'Content-type: application/json' http://$URL:35357/v3/OS-TRUST/trusts"
 TRUST=$(curl -H "X-Auth-Token: $TOKEN1" -d '{ "trust": { "expires_at": "2024-02-27T18:30:59.999999Z", "impersonation": false, "project_id": "'$TENANT1'", "roles": [ { "name": "Member" } ], "trustee_user_id": "'$USER2'", "trustor_user_id": "'$USER1'" }}' -H "Content-type: application/json" http://$URL:35357/v3/OS-TRUST/trusts)
+echo ">>>"
 echo $TRUST| python -mjson.tool
 TRUST_ID=$(echo $TRUST| python -c 'import json,sys; obj=json.load(sys.stdin); print obj["trust"]["id"]' | col -b)
 #echo $TRUST_ID
 
 echo "** Get Trust token"
 TRUST_JSON='{ "auth" : { "identity" : { "methods" : [ "token" ], "token" : { "id" : "'$TOKEN2'" } }, "scope" : { "OS-TRUST:trust" : { "id" : "'$TRUST_ID'" } } } }'
-#echo $TRUST_JSON | python -mjson.tool
+echo $TRUST_JSON| python -mjson.tool
 #TRUST_CONSUME=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens)
 #echo $TRUST_CONSUME
 TRUST_TOKEN=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}')
-echo $TRUST_TOKEN
+#echo $TRUST_TOKEN
 
 echo "** List items owned by User1 using the Trust token (cURL)"
+
+echo "curl -H 'X-Auth-Token: TRUST_TOKEN' http://$URL:8080/v1/AUTH_$TENANT1/stuff"
 curl -H 'X-Auth-Token: '$TRUST_TOKEN'' http://$URL:8080/v1/AUTH_$TENANT1/stuff
+
 
 # Excerpt from the swift server proxy logs:
 #
@@ -88,6 +102,7 @@ echo "** Do it again with the swift CLI"
 unset OS_TENANT_NAME
 unset OS_USERNAME
 unset OS_PASSWORD
+echo "swift --os-auth-token TRUST_TOKEN --os-storage-url http://$URL:8080/v1/AUTH_$TENANT1 -V 2 list stuff"
 swift --os-auth-token $TRUST_TOKEN --os-storage-url http://$URL:8080/v1/AUTH_$TENANT1 -V 2 list stuff
 
 echo "** Upload a file on behalf of User1"
@@ -95,6 +110,7 @@ curl -X PUT -T file3 -H 'X-Auth-Token: '$TRUST_TOKEN'' http://$URL:8080/v1/AUTH_
 swift --os-username User1 --os-password User1 --os-tenant-name TestTenant1 list stuff
 
 echo "** Cleanup"
+#TODO cleanup trust as well
 rm file1 file2 file3
 swift --os-username User1 --os-password User1 --os-tenant-name TestTenant1 delete stuff
 export OS_TENANT_NAME=$TENANT_NAME
