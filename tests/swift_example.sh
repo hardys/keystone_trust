@@ -81,7 +81,7 @@ TRUST_JSON='{ "auth" : { "identity" : { "methods" : [ "token" ], "token" : { "id
 echo $TRUST_JSON| python -mjson.tool
 #TRUST_CONSUME=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens)
 #echo $TRUST_CONSUME
-TRUST_TOKEN=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}')
+TRUST_TOKEN=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}'| col -b)
 #echo $TRUST_TOKEN
 
 echo "** List items owned by User1 using the Trust token (cURL)"
