@@ -61,16 +61,21 @@ echo $TRUST| python -mjson.tool
 TRUST_ID=$(echo $TRUST| python -c 'import json,sys; obj=json.load(sys.stdin); print obj["trust"]["id"]' | col -b)
 echo $TRUST_ID
 
-echo "** Get Trust token"
-TRUST_JSON='{ "auth" : { "identity" : { "methods" : [ "token" ], "token" : { "id" : "'$TOKEN2'" } }, "scope" : { "OS-TRUST:trust" : { "id" : "'$TRUST_ID'" } } } }'
-echo $TRUST_JSON| python -mjson.tool
-TRUST_CONSUME=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens)
-echo $TRUST_CONSUME
-TRUST_TOKEN=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v3/auth/tokens| awk '{if ($1 =="X-Subject-Token:") {print $2}}'| col -b)
-echo $TRUST_TOKEN
+echo "** Get v2 token"
+V2_JSON='{"auth": {"tenantName": "TestTenant2", "passwordCredentials": {"username": "User2", "password": "User2"}}}'
+#TRUST_JSON='{"auth": {"tenantName": "TestTenant2", "passwordCredentials": {"username": "User2", "password": "User2"}}}'
+##TRUST_JSON='{ "auth" : { "identity" : { "methods" : [ "token" ], "token" : { "id" : "'$TOKEN2'" } }, "scope" : { "OS-TRUST:trust" : { "id" : "'$TRUST_ID'" } } } }'
+echo $V2_JSON| python -mjson.tool
+V2_RESP=$(curl -i -d "$V2_JSON" -H "Content-type: application/json" http://$URL:35357/v2.0/tokens | grep "^{")
+echo "V2_RESP=$V2_RESP"
+V2_TOKEN=$(echo $V2_RESP | python -c 'import json,sys; obj=json.load(sys.stdin); print obj["access"]["token"]["id"]' | col -b)
+echo "V2_TOKEN=$V2_TOKEN"
 
-#keystone user-delete User1
-#keystone user-delete User2
-#keystone role-delete MyFancyRole
-#keystone tenant-delete TestTenant1
-#keystone tenant-delete TestTenant2
+echo "** Get v2 Trust token"
+TRUST_JSON='{"auth": {"token": {"id": "'$V2_TOKEN'"}, "trust_id":"'$TRUST_ID'", "tenantId":"'$TENANT1'"}}'
+#TRUST_JSON='{"auth": {"token": {"id": "'$V2_TOKEN'"}, "trust_id":"'$TRUST_ID'"}}'
+##TRUST_JSON='{ "auth" : { "identity" : { "methods" : [ "token" ], "token" : { "id" : "'$TOKEN2'" } }, "scope" : { "OS-TRUST:trust" : { "id" : "'$TRUST_ID'" } } } }'
+echo $TRUST_JSON| python -mjson.tool
+TRUST_CONSUME=$(curl -i -d "$TRUST_JSON" -H "Content-type: application/json" http://$URL:35357/v2.0/tokens)
+echo "TRUST_CONSUME=$TRUST_CONSUME"
+
